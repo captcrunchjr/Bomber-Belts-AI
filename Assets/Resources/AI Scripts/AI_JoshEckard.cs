@@ -11,29 +11,28 @@ public class AI_JoshEckard : MonoBehaviour {
     public int[] beltDirections;
     public float[] buttonLocations;
 
-    //******************************
-    public GameScript gameScript;
-    public HealthBarScript blueHealthIndicator, redHealthIndicator;
-    //public Indicator_Blue(Clone) redHealthBarScript, blueHealthBarScript;
-    //public Text redHealthBarText, blueHealthBarText;
-
-    public bool playerId;
-    public int currPlayerHealth;
-    public int currOppHealth;
-    public float oppPos;
-    public float playerPos;
-    public string state;
-    public float startTime;
-    public float[] bombAccelerations;
-    public float[,] bombFirstVelocity;
-    public float[,] bombNextVelocity;
-    public float[] bombLaunchTime;
-    public float[] bombDistances;
-    public float[] timeToDetonation;
-    public float[] timeToButton;
-    public float beltLength;
-    public float[] bombScores;
-    public bool launchedBomb3;
+    //vvvvvvvvvvvvvvvvMy Stuffvvvvvvvvvvvvvvvvv
+    //text element needed to track health values for state change
+    HealthBarScript blueHealthIndicator, redHealthIndicator;
+    bool playerId;
+    int currPlayerHealth;
+    int currOppHealth;
+    float oppPos;
+    float playerPos;
+    [SerializeField]
+    string state;
+    float[] bombAccelerations;
+    float[,] bombFirstVelocity;
+    float[,] bombNextVelocity;
+    float[] bombLaunchTime;
+    float[] bombDistances;
+    [SerializeField]
+    float[] timeToDetonation;
+    float[] timeToButton;
+    float beltLength;
+    float[] bombScores;
+    bool launchedBomb3;
+    //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 	// Use this for initialization
 	void Start () {
@@ -49,15 +48,11 @@ public class AI_JoshEckard : MonoBehaviour {
 
         playerSpeed = mainScript.getPlayerSpeed();
 
-        //********************************
-        gameScript = GetComponent<GameScript>();
-        //blueHealthBarScript = GetComponent<HealthBarScript>();
-        //blueHealthBarText = GetComponent<
-        //playerBlue = gameScript.bluePlayer;
+        //vvvvvvvvvvvvvvvvMy Stuffvvvvvvvvvvvvvvvvv
         blueHealthIndicator = GameObject.Find("Indicator_Blue(Clone)").GetComponent<HealthBarScript>();
         redHealthIndicator = GameObject.Find("Indicator_Red(Clone)").GetComponent<HealthBarScript>();
-
         MyInitialize(buttonLocations.Length);
+        //^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 	}
 
 	// Update is called once per frame
@@ -67,35 +62,34 @@ public class AI_JoshEckard : MonoBehaviour {
 
         //Your AI code goes here
         UpdateHealth();
-        state = setState();
+        state = setState(); //set state, based on health values
         oppPos = mainScript.getOpponentLocation(); //opponent location at top of update
         playerPos = mainScript.getCharacterLocation(); //player position at top of update
         bombSpeeds = mainScript.getBombSpeeds(); //update bomb speeds
         bombDistances = mainScript.getBombDistances(); //update bomb distances
 
-        //move to bomb 3 and trigger it, then states take effect
+        //move to bomb 4 triggering them as it moves, then states take effect
         if(!launchedBomb3){
             TriggerBomb3OnStart();
         }
         else{
-            //maintain fairly current Acceleration values
-            CalculateAcceleration();
-            TimeToDetonation();
-            TimeToButton();
+            CalculateAcceleration(); //maintain fairly current Acceleration values
+            TimeToDetonation(); //calculate time until detonation in its current direction: attempted to make it more precise by including the acceleration.
+            TimeToButton(); //time for player to reach each button from its location - necessary for scoring
 
-            if(state == "spike" || state == "defend"){
+            //decide scoring method based on state
+            if(state == "spike"){
                 for(int i = 0; i < bombScores.Length; i++){
                     SpikeStateScoring(i);
                 }
             }
-            /*else{
-                //add defend scoring
-                for(int i = 0; i < bombScores.length; 1++){
+            else{
+                for(int i = 0; i < bombScores.Length; i++){
                     DefendStateScoring(i);
                 }
-            }*/
+            }
+            //get the index of the best bomb score
             int best = FindBestBomb();
-            print("Best bomb is bomb " + best + " with a score of " + bombScores[best]);
             if(Mathf.Abs(mainScript.getCharacterLocation() - buttonLocations[best]) < .04){
                 mainScript.push();
             }
@@ -110,7 +104,6 @@ public class AI_JoshEckard : MonoBehaviour {
 	}
 
     void MyInitialize(int length){
-        startTime = Time.time;
         state = "spike";
         playerId = mainScript.isBlue;
         UpdateHealth();
@@ -141,13 +134,13 @@ public class AI_JoshEckard : MonoBehaviour {
     }
 
     void TriggerBomb3OnStart(){
-        if(Mathf.Abs(playerPos - buttonLocations[2]) < .05){
+        if(Mathf.Abs(playerPos - buttonLocations[3]) < .05){
             mainScript.push();
             launchedBomb3 = true;
         }
         else{
             mainScript.push();
-            MoveTo(buttonLocations[2]);
+            MoveTo(buttonLocations[3]);
         }
     }
 
@@ -183,30 +176,19 @@ public class AI_JoshEckard : MonoBehaviour {
                 }
                 //if first velocity has a value and next velocity doesnt
                 else if(bombNextVelocity[i,0] == 0.0f){
-                    /*if(Time.time == bombFirstVelocity[i,1]){
-                        print("Continuing on BombNextVelo check");
-                    }
-                    else{*/
-                        bombNextVelocity[i,0] = bombSpeeds[i];
-                        currTime = Time.time;
-                        bombNextVelocity[i,1] = currTime;
-                    //}
+                    bombNextVelocity[i,0] = bombSpeeds[i];
+                    currTime = Time.time;
+                    bombNextVelocity[i,1] = currTime;
                 }
                 //if it has both next and first, move next to first, get new next
                 else{
-                    /*if(Time.time == bombNextVelocity[i,1]){
-                        print("Continuing on complicated else");
-                    }
-                    else{*/
-                        bombFirstVelocity[i,0] = bombNextVelocity[i,0];
-                        bombFirstVelocity[i,1]  = bombNextVelocity[i,1];
+                    bombFirstVelocity[i,0] = bombNextVelocity[i,0];
+                    bombFirstVelocity[i,1]  = bombNextVelocity[i,1];
 
-                        bombNextVelocity[i,0] = bombSpeeds[i];
-                        currTime = Time.time;
-                        bombNextVelocity[i,1] = currTime;
-                    //}
+                    bombNextVelocity[i,0] = bombSpeeds[i];
+                    currTime = Time.time;
+                    bombNextVelocity[i,1] = currTime;
                 }
-                //SetBombLaunchTime(i, currTime);
             }
             else{
                 bombFirstVelocity[i,0] = 0.0f;
@@ -318,7 +300,7 @@ public class AI_JoshEckard : MonoBehaviour {
                 //if we cant reach it and the button wont be usable before detonation
                 if(timeToDetonation[i] < timeToButton[i] || timeToDetonation[i] < buttonCooldowns[i]){
                     //Score them low because we can't get there to do anything, but modify them by their distance, ordering them closer = more preferrable
-                    bombScores[i] = bombScores[i] * .1f * (1-(DistanceToButton(buttonLocations[i], mainScript.getCharacterLocation())/100));
+                    bombScores[i] = bombScores[i] * .04f * (1-((DistanceToButton(buttonLocations[i], mainScript.getCharacterLocation())/playerSpeed)/10));
                 }
                 //if can reach button before detonation
                 else if(timeToDetonation[i] > timeToButton[i]){
@@ -348,12 +330,12 @@ public class AI_JoshEckard : MonoBehaviour {
             //if bombs are approaching enemny, less useful as little actions can be taken
             else{
                 //bombs scored based on distance from us, generally hoping to not need to rely on these
-                bombScores[i] = bombScores[i] * .1f * (1-(DistanceToButton(buttonLocations[i], mainScript.getCharacterLocation())/100));
+                bombScores[i] = bombScores[i] * .1f * (1-((DistanceToButton(buttonLocations[i], mainScript.getCharacterLocation())/playerSpeed)/10));
             }
         }
         //bombs that aren't moving get a modified by .05 just cause we want to spread the bombs out but there may be cases where starting a new bomb is better
         else{
-            bombScores[i] = bombScores[i] * .05f * (1-(DistanceToButton(buttonLocations[i], mainScript.getCharacterLocation())/100));
+            bombScores[i] = bombScores[i] * .75f * (1-((DistanceToButton(buttonLocations[i], mainScript.getCharacterLocation())/playerSpeed)/10));
         }
     }
 
@@ -372,20 +354,21 @@ public class AI_JoshEckard : MonoBehaviour {
             if(beltDirections[i] == -1){
                 //if we can get to it and the button will be pressable, we prefer it. weighted by closeness to player current position
                 if(timeToDetonation[i] > timeToButton[i] && timeToDetonation[i] > buttonCooldowns[i]){
-                    bombScores[i] *= 20 * (1-(DistanceToButton(buttonLocations[i], mainScript.getCharacterLocation())/100_));
+                    bombScores[i] *= 20 * (1-((DistanceToButton(buttonLocations[i], mainScript.getCharacterLocation())/playerSpeed)/10));
                 }
                 //if its moving at us and we can't stop it, adjust score based on distance from us
                 else{
-                    bombScores[i] *= (1-(DistanceToButton(buttonLocations[i], mainScript.getCharacterLocation())/100_));
+                    bombScores[i] *= (1-((DistanceToButton(buttonLocations[i], mainScript.getCharacterLocation())/playerSpeed)/10));
                 }
             }
+            //approaching opponent so not helpful
             else if(beltDirections[i] == 1){
-                //approaching enemy so not helpful
-                bombScores[i] *= 0.06f * (DistanceToButton(buttonLocations[i], mainScript.getCharacterLocation())/100);
+                bombScores[i] *= 0.06f * (1-((DistanceToButton(buttonLocations[i], mainScript.getCharacterLocation())/playerSpeed)/10));
             }
         }
+        //bomb is not active
         else{
-            
+            bombScores[i] *= (1-((DistanceToButton(buttonLocations[i], mainScript.getCharacterLocation())/playerSpeed)/10));
         }
 
     }
@@ -435,9 +418,7 @@ public class AI_JoshEckard : MonoBehaviour {
 
     int FindBestBomb(){
         int indexOfBest = 0;
-        print("Bomb " + indexOfBest + " score: " + bombScores[indexOfBest]);
         for(int i = 1; i < bombScores.Length; i++){
-            print("Bomb " + i + " score: " + bombScores[i]);
             if(bombScores[i] > bombScores[indexOfBest]){
                 indexOfBest = i;
             }
@@ -457,7 +438,4 @@ public class AI_JoshEckard : MonoBehaviour {
             //no move needed why are you here?
         }
     }
-
-    
-
 }
