@@ -3,8 +3,8 @@ using System.Collections;
 
 public class ButtonScript : MonoBehaviour {
 
-    float cooldownTime;
-    float currentCooldown;
+    public float cooldownTime;
+    public float currentCooldown;
 
     public Transform buttonObject;
     public Renderer glowMaterial;
