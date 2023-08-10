@@ -21,7 +21,7 @@ public class AI_JoshEckard : MonoBehaviour {
     float playerPos;
     [SerializeField]
     string state;
-    float[] bombAccelerations;
+    public float[] bombAccelerations;
     float[,] bombFirstVelocity;
     float[,] bombNextVelocity;
     float[] bombLaunchTime;
